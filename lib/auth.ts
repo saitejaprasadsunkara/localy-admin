@@ -7,25 +7,25 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 import { auth, db } from "./firebase";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 
 export interface AdminUser extends User {
   role?: "super_admin" | "admin" | "moderator";
   permissions?: Record<string, boolean>;
 }
 
-// Extended Firebase User type with custom claims
-interface FirebaseUserWithClaims extends User {
+interface UserWithClaims extends User {
   customClaims?: {
     role?: string;
     permissions?: Record<string, boolean>;
   };
-}
-
-// Firebase Auth Error interface
-interface FirebaseAuthError {
-  code?: string;
-  message?: string;
 }
 
 /**
@@ -44,10 +44,14 @@ export const signInAdmin = async (
     const user = result.user;
 
     // Get admin data from Firestore
-    const adminRef = doc(db, "admins", user.uid);
-    const adminSnap = await getDoc(adminRef);
+    //const adminRef = doc(db, "admins", user.uid);
+    //const adminSnap = await getDoc(adminRef);
 
-    if (!adminSnap.exists()) {
+    const adminRef = collection(db, "admins");
+    const q = query(adminRef, where("email", "==", user.email));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
       await firebaseSignOut(auth);
       return {
         user: null,
@@ -55,6 +59,7 @@ export const signInAdmin = async (
       };
     }
 
+    const adminSnap = querySnapshot.docs[0];
     const adminData = adminSnap.data();
 
     // Check if admin is active
@@ -81,20 +86,23 @@ export const signInAdmin = async (
       user: adminUser,
       error: null,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     let errorMessage = "Login failed";
-    const authError = error as FirebaseAuthError;
 
-    if (authError.code === "auth/user-not-found") {
-      errorMessage = "Admin account not found";
-    } else if (authError.code === "auth/wrong-password") {
-      errorMessage = "Invalid password";
-    } else if (authError.code === "auth/invalid-email") {
-      errorMessage = "Invalid email format";
-    } else if (authError.code === "auth/too-many-requests") {
-      errorMessage = "Too many login attempts. Try again later.";
-    } else if (authError.code === "auth/user-disabled") {
-      errorMessage = "This account has been disabled";
+    if (error && typeof error === "object" && "code" in error) {
+      const firebaseError = error as { code: string };
+
+      if (firebaseError.code === "auth/user-not-found") {
+        errorMessage = "Admin account not found";
+      } else if (firebaseError.code === "auth/wrong-password") {
+        errorMessage = "Invalid password";
+      } else if (firebaseError.code === "auth/invalid-email") {
+        errorMessage = "Invalid email format";
+      } else if (firebaseError.code === "auth/too-many-requests") {
+        errorMessage = "Too many login attempts. Try again later.";
+      } else if (firebaseError.code === "auth/user-disabled") {
+        errorMessage = "This account has been disabled";
+      }
     }
 
     return {
@@ -134,7 +142,7 @@ export const getCurrentUser = (): User | null => {
  * Check if user has permission
  */
 export const hasPermission = (permission: string): boolean => {
-  const user = auth.currentUser as FirebaseUserWithClaims | null;
+  const user = auth.currentUser as UserWithClaims | null;
   if (!user) return false;
 
   const customClaims = user.customClaims || {};
@@ -147,7 +155,7 @@ export const hasPermission = (permission: string): boolean => {
  * Check if user is super admin
  */
 export const isSuperAdmin = (): boolean => {
-  const user = auth.currentUser as FirebaseUserWithClaims | null;
+  const user = auth.currentUser as UserWithClaims | null;
   if (!user) return false;
 
   const customClaims = user.customClaims || {};
@@ -158,7 +166,7 @@ export const isSuperAdmin = (): boolean => {
  * Check if user is admin
  */
 export const isAdmin = (): boolean => {
-  const user = auth.currentUser as FirebaseUserWithClaims | null;
+  const user = auth.currentUser as UserWithClaims | null;
   if (!user) return false;
 
   const customClaims = user.customClaims || {};
@@ -171,7 +179,7 @@ export const isAdmin = (): boolean => {
  * Get user role
  */
 export const getUserRole = (): string | null => {
-  const user = auth.currentUser as FirebaseUserWithClaims | null;
+  const user = auth.currentUser as UserWithClaims | null;
   if (!user) return null;
 
   const customClaims = user.customClaims || {};
