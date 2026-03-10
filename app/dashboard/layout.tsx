@@ -100,6 +100,12 @@ export default function DashboardLayout({
       badge: "SUPER", // ← SHOW BADGE
     },
     {
+      href: "/dashboard/verifications",
+      label: "All Verifications",
+      icon: "✅",
+      visible: true,
+    },
+    {
       href: "/dashboard/analytics",
       label: "Analytics",
       icon: "📈",
@@ -257,6 +263,7 @@ export default function DashboardLayout({
               {pathname.includes("drivers") && "Drivers Verification"}
               {pathname.includes("delivery") && "Delivery Agents Verification"}
               {pathname.includes("admin-management") && "👑 Admin Management"}
+              {pathname.includes("verifications") && "All Verifications"}
               {pathname.includes("analytics") && "Analytics"}
               {pathname.includes("audit") && "Audit Logs"}
               {pathname.includes("settings") && "Settings"}
