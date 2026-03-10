@@ -67,7 +67,8 @@ export default function SellersPage() {
       const mobileDb = getMobileAppFirestore();
 
       // Query: Get all pending seller verifications
-      const verificationRef = collection(mobileDb, "verificationRequests");
+      // const verificationRef = collection(mobileDb, "verificationRequests");
+      const verificationRef = collection(mobileDb, "verifications");
       const q = query(
         verificationRef,
         where("userRole", "==", "driver"),
