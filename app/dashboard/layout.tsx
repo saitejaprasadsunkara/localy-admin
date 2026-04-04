@@ -126,6 +126,18 @@ export default function DashboardLayout({
       visible: true,
     },
     {
+      href: "/dashboard/documents",
+      label: "Documents",
+      icon: "📄",
+      visible: true,
+    },
+    {
+      href: "/dashboard/approved-agents",
+      label: "Approved Agents",
+      icon: "🏅",
+      visible: true,
+    },
+    {
       href: "/dashboard/admin-management",
       label: "Admin Management",
       icon: "👨‍💼",
